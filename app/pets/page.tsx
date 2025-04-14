@@ -14,6 +14,7 @@ interface Pet {
   description: string;
   imageUrl: string;
   available: boolean;
+  featured?: boolean;
 }
 
 // Sample pets data
@@ -28,6 +29,7 @@ const pets: Pet[] = [
     description: 'Friendly and energetic Golden Retriever looking for an active family.',
     imageUrl: '/pets/golden-retriever.jpg',
     available: true,
+    featured: true,
   },
   {
     id: '2',
@@ -39,6 +41,7 @@ const pets: Pet[] = [
     description: 'Beautiful Persian cat with a gentle personality.',
     imageUrl: '/pets/persian-cat.jpg',
     available: true,
+    featured: true,
   },
   {
     id: '3',
@@ -64,11 +67,66 @@ const pets: Pet[] = [
   },
 ];
 
+const PetCard = ({ pet, featured = false }: { pet: Pet; featured?: boolean }) => (
+  <div 
+    className={`bg-white rounded-lg shadow-md overflow-hidden flex flex-col transform transition-all duration-300 hover:shadow-xl ${
+      featured ? 'border-2 border-blue-500' : ''
+    }`}
+  >
+    <div className="relative aspect-[4/3] w-full group">
+      <Image
+        src={pet.imageUrl}
+        alt={pet.name}
+        fill
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        className="object-cover transition-transform duration-300 group-hover:scale-105"
+        priority={featured}
+      />
+      {featured && (
+        <div className="absolute top-4 left-4 bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+          Featured
+        </div>
+      )}
+      {!pet.available && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <span className="text-white text-lg font-bold">Not Available</span>
+        </div>
+      )}
+    </div>
+    <div className="p-6 flex-1 flex flex-col">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">{pet.name}</h2>
+          <p className="text-slate-800">{pet.breed}</p>
+        </div>
+        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+          {pet.type}
+        </span>
+      </div>
+      <p className="text-slate-700 mb-4 line-clamp-2">{pet.description}</p>
+      <div className="flex justify-between items-center mt-auto">
+        <div>
+          <p className="text-slate-800">Age: {pet.age} year(s)</p>
+          <p className="text-blue-600 font-bold text-xl">${pet.price}</p>
+        </div>
+        <Link
+          href={`/pets/${pet.id}`}
+          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors duration-300"
+        >
+          View Details
+        </Link>
+      </div>
+    </div>
+  </div>
+);
+
 export default function PetsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
 
+  const featuredPets = pets.filter(pet => pet.featured && pet.available);
+  
   const filteredPets = pets.filter((pet) => {
     const matchesSearch = pet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pet.breed.toLowerCase().includes(searchTerm.toLowerCase());
@@ -80,6 +138,21 @@ export default function PetsPage() {
   return (
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="container mx-auto px-4">
+        {/* Featured Pets Section */}
+        {featuredPets.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-3xl font-bold mb-6">
+              Featured Pets
+              <span className="ml-2 text-blue-600">⭐</span>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {featuredPets.map((pet) => (
+                <PetCard key={pet.id} pet={pet} featured={true} />
+              ))}
+            </div>
+          </div>
+        )}
+
         <h1 className="text-4xl font-bold mb-8">Available Pets</h1>
         
         {/* Filters */}
@@ -92,7 +165,7 @@ export default function PetsPage() {
               <input
                 type="text"
                 placeholder="Search by name or breed"
-                className="w-full p-2 border border-slate-300 rounded-md"
+                className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -102,7 +175,7 @@ export default function PetsPage() {
                 Pet Type
               </label>
               <select
-                className="w-full p-2 border border-slate-300 rounded-md"
+                className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
               >
@@ -120,7 +193,7 @@ export default function PetsPage() {
               <input
                 type="number"
                 placeholder="Enter maximum price"
-                className="w-full p-2 border border-slate-300 rounded-md"
+                className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
               />
@@ -131,48 +204,14 @@ export default function PetsPage() {
         {/* Pet Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredPets.map((pet) => (
-            <div key={pet.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
-              <div className="relative aspect-[4/3] w-full">
-                <Image
-                  src={pet.imageUrl}
-                  alt={pet.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  className="object-cover"
-                  priority
-                />
-              </div>
-              <div className="p-6 flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold mb-2">{pet.name}</h2>
-                    <p className="text-slate-800">{pet.breed}</p>
-                  </div>
-                  <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-                    {pet.type}
-                  </span>
-                </div>
-                <p className="text-slate-700 mb-4 line-clamp-2">{pet.description}</p>
-                <div className="flex justify-between items-center mt-auto">
-                  <div>
-                    <p className="text-slate-800">Age: {pet.age} year(s)</p>
-                    <p className="text-blue-600 font-bold text-xl">${pet.price}</p>
-                  </div>
-                  <Link
-                    href={`/pets/${pet.id}`}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition"
-                  >
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            </div>
+            <PetCard key={pet.id} pet={pet} />
           ))}
         </div>
 
         {filteredPets.length === 0 && (
           <div className="text-center py-12">
             <h3 className="text-xl text-slate-800">No pets found matching your criteria</h3>
+            <p className="text-slate-600 mt-2">Try adjusting your filters or search term</p>
           </div>
         )}
       </div>
